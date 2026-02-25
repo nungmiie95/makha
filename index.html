@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>บทเรียนวันมาฆบูชา - โรงเรียนบ้านนาดินดำ</title>
+    <!-- เรียกใช้ Tailwind CSS แบบออนไลน์ -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- เรียกใช้ React แบบออนไลน์ -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <!-- เรียกใช้ Font Prompt -->
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * { font-family: 'Prompt', sans-serif; }
+        @keyframes marquee {
+            0% { transform: translateX(100%); }
+            100% { transform: translateX(-150%); }
+        }
+        .animate-marquee {
+            display: inline-block;
+            white-space: nowrap;
+            animation: marquee 15s linear infinite;
+        }
+        .wien-tien-path {
+            transition: transform 0.5s ease-in-out;
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+        }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="bg-[#FFF9F0] m-0 p-0">
+    <div id="root"></div>
+
+    <!-- ส่วนของโค้ด React -->
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        // ==========================================
+        // 🚨 เอา URL ของ Google Apps Script มาใส่ตรงนี้ 🚨
+        // ==========================================
+        const GOOGLE_SHEET_URL = "https://script.google.com/macros/s/AKfycbz1uiHL9cUzAoJTKGC-gBA6fEkuneP0KPFGuFLzpJYumWgYrD2htg1dXy2J08XcJJU/exec"; 
+
+        // ฟังก์ชันส่งข้อมูลไป Google Sheet
+        const sendToGoogleSheet = (action, data) => {
+            if (!GOOGLE_SHEET_URL.startsWith("https://script.google.com")) return; // ถ้ายังไม่ใส่ URL ให้ข้ามไป
+
+            const formData = new FormData();
+            formData.append('action', action);
+            formData.append('name', data.name);
+            formData.append('room', data.room);
+            if (data.score !== undefined) formData.append('score', data.score);
+            if (data.time !== undefined) formData.append('time', data.time);
+
+            // ส่งข้อมูลแบบเงียบๆ พื้นหลัง
+            fetch(GOOGLE_SHEET_URL, { method: 'POST', body: formData, mode: 'no-cors' })
+                .then(() => console.log("ส่งข้อมูลไป Google Sheet สำเร็จ"))
+                .catch(error => console.error('Error!', error.message));
+        };
+
+        // ข้อมูลเบื้องต้น
+        const SCHOOL_LOGO = "https://img5.pic.in.th/file/secure-sv1/unnamed787b948845091a99.md.png";
+        const SCHOOL_NAME = "โรงเรียนบ้านนาดินดำ";
+        const AUTHOR_NAME = "นายนทีธร เหล่าโสด";
+
+        const THEME = {
+            bg: 'bg-[#FFF9F0]',
+            primary: 'text-[#E65100]',
+            primaryBg: 'bg-gradient-to-r from-[#FF8F00] to-[#E65100]',
+            secondary: 'text-[#8D6E63]',
+            accent: 'bg-[#FFB300]',
+        };
+
+        const STUDENTS_DATA = {
+            "ม.1": ["ด.ช.กวีเอก แก้วสาลี", "ด.ช.ปุณยวีร์ ศรีแก้ว", "ด.ช.พงษ์พิพัฒน์ จันทร์หลวย", "ด.ช.พฤศกฤษ นาศรีทม", "ด.ช.พิชิตชัย ลีตน", "ด.ช.พิพรรธ สะตะ", "ด.ญ.กิตติยา ชัชวาลย์", "ด.ญ.ชญานี ประทุมถิ่น", "ด.ญ.ญาณิน ชื่นจิตร", "ด.ญ.ธิดารัตน์ บุตรท้าว", "ด.ญ.บุญลักษณ์ นีรมิตร์", "ด.ญ.พัชรี อินทรีย์", "ด.ญ.วันดี แก้วกันหา", "ด.ญ.สุภัทรชาดา สีชมภู", "ด.ญ.อัยลดา พรมตีด", "ด.ญ.มนัสการ สุขสังขาร", "ด.ช.นนทวัฒน์ เพิ่มจิตร", "ด.ญ.กัญญาภัค แก้วกำ"],
+            "ม.2": ["ด.ช.ก้องภพ ไชยแสง", "ด.ช.คุณาเทพ ดวงศรี", "ด.ช.ณัฐพงษ์ พรมมาวัย", "ด.ช.ธนาวี อุดมกัณฑ์", "ด.ช.นัธทวัฒน์ หงษ์ทอง", "ด.ช.วิทวัส วาที", "ด.ญ.เกศริน ทองมหา", "ด.ญ.จิดาภา อินธิแสง", "ด.ญ.ณัฐลดา แฝงนาง", "ด.ญ.มุทิตา จอมมณี", "ด.ญ.สวิตตา ชุมคต", "ด.ช.อานนท์ สำนวน", "ด.ญ.ปุญญิศา วงษ์ซ้าย"],
+            "ม.3": ["ด.ช.อภิวัฒน์ สีชมภู", "ด.ญ.ใบตอง วงษ์จันทร์", "ด.ญ.จิราพร จันทร์หลวย", "ด.ช.ภานุพงศ์ อิ่มประดิษฐ์", "ด.ช.พิชญะ นางาม", "ด.ช.ชนัญญู สุขสังขาร", "ด.ช.อนุชิต สอนนวน", "ด.ช.พุทธชาติ คณะวาปี", "ด.ช.นาวิน ลีเบาะ", "ด.ช.อนุรักษ์ นีรมิตร์", "ด.ญ.ปริชญา ถมมา", "ด.ญ.ยอแสง กองทอง", "ด.ญ.ลัดดาภรณ์ รัตนภักดี", "ด.ญ.จุฬาลักษณ์ แซ่โค้ว", "ด.ญ.ปวิชญา มิ่งเจริญทรัพย์", "ด.ญ.ชลนิภา เนื่องมี", "ด.ญ.ปัทมาพร หาญชนะ", "ด.ช.ธีรนัย แสนคำ", "ด.ช.สายรุ้ง สอนไสย"]
+        };
+
+        const QUIZ_DATA = [
+            { question: "🌕 วันมาฆบูชาตรงกับวันอะไร?", options: ["ขึ้น 15 ค่ำ เดือน 3", "ขึ้น 15 ค่ำ เดือน 6", "ขึ้น 15 ค่ำ เดือน 8", "แรม 8 ค่ำ เดือน 6"], answer: 0 },
+            { question: "☸️ หัวใจของพระพุทธศาสนาคืออะไร?", options: ["อริยสัจ 4", "โอวาทปาติโมกข์", "มรรคมีองค์ 8", "พรหมวิหาร 4"], answer: 1 },
+            { question: "👥 พระสงฆ์ที่มาประชุมกันในวันมาฆบูชามีจำนวนเท่าใด?", options: ["500 รูป", "1,000 รูป", "1,250 รูป", "2,500 รูป"], answer: 2 },
+            { question: "✨ พระสงฆ์ทั้งหมดที่มาประชุมกันล้วนเป็นผู้ที่ได้รับการบวชแบบใด?", options: ["ญัตติจตุตถกรรมวาจา", "ติสรณคมนูปสัมปทา", "เอหิภิกขุอุปสัมปทา", "บวชโดยพระอุปัชฌาย์ทั่วไป"], answer: 2 },
+            { question: "❌ เหตุการณ์ใด ไม่ได้ เกิดขึ้นในวันจาตุรงคสันนิบาต?", options: ["พระสงฆ์มาประชุมกันโดยมิได้นัดหมาย", "พระพุทธเจ้าแสดงธรรมจักรฯ", "พระสงฆ์ล้วนเป็นพระอรหันต์", "ดวงจันทร์เสวยมาฆฤกษ์"], answer: 1 },
+            { question: "⛩️ พระสงฆ์ 1,250 รูป มาประชุมพร้อมกันโดยมิได้นัดหมาย ณ สถานที่ใด?", options: ["วัดเวฬุวันมหาวิหาร", "วัดเชตวันมหาวิหาร", "วัดพระเชตุพนฯ", "ป่าอิสิปตนมฤคทายวัน"], answer: 0 },
+            { question: "🌟 คำว่า 'จาตุรงคสันนิบาต' หมายถึงการประชุมที่ประกอบด้วยองค์กี่ประการ?", options: ["2 ประการ", "3 ประการ", "4 ประการ", "5 ประการ"], answer: 2 },
+            { question: "🧘‍♂️ พระสงฆ์ทั้ง 1,250 รูปที่มาประชุมกัน ล้วนบรรลุธรรมขั้นใด?", options: ["พระโสดาบัน", "พระสกทาคามี", "พระอนาคามี", "พระอรหันต์"], answer: 3 },
+            { question: "🕯️ กิจกรรมสำคัญที่พุทธศาสนิกชนมักปฏิบัติในคืนวันมาฆบูชาคืออะไร?", options: ["ตักบาตรเทโว", "เวียนเทียน", "แห่เทียนพรรษา", "ก่อเจดีย์ทราย"], answer: 1 },
+            { question: "💖 หลักธรรม 'โอวาทปาติโมกข์' มีหลักการสำคัญกี่ประการ?", options: ["2 ประการ", "3 ประการ", "4 ประการ", "5 ประการ"], answer: 1 }
+        ];
+
+        const SLIDES_DATA = [
+            { title: "วันมาฆบูชา 🌕", desc: "ตรงกับวันเพ็ญเดือน 3 เป็นวันที่พระสงฆ์ 1,250 รูปมาประชุมกันโดยมิได้นัดหมาย", icon: "⭐" },
+            { title: "จาตุรงคสันนิบาต #1 👥", desc: "พระสงฆ์จำนวน 1,250 รูป มาประชุมพร้อมกันโดยมิได้นัดหมาย ณ วัดเวฬุวัน", icon: "👥" },
+            { title: "จาตุรงคสันนิบาต #2 ✨", desc: "พระสงฆ์ทั้งหมดล้วนเป็น 'พระอรหันต์' ผู้ทรงอภิญญา 6 (ผู้หมดจดจากกิเลส)", icon: "✨" },
+            { title: "จาตุรงคสันนิบาต #3 🙏", desc: "พระสงฆ์ทั้งหมดเป็น 'เอหิภิกขุอุปสัมปทา' (ได้รับการบวชจากพระพุทธเจ้าโดยตรง)", icon: "🙏" },
+            { title: "จาตุรงคสันนิบาต #4 🌕", desc: "วันนั้นตรงกับวันเพ็ญ เดือน 3 (ดวงจันทร์เสวยมาฆฤกษ์ สว่างเต็มดวง)", icon: "🌕" },
+            { title: "โอวาทปาติโมกข์ ☸️", desc: "หัวใจพุทธศาสนา: \n1. ละเว้นความชั่ว \n2. ทำความดี \n3. ทำจิตใจให้บริสุทธิ์", icon: "☸️" },
+        ];
+
+        function App() {
+            const [user, setUser] = useState(null);
+            const [currentTab, setCurrentTab] = useState('home');
+            const [prayers, setPrayers] = useState(['ขอให้เรียนเก่งๆ สาธุ 🙏', 'ขอให้ครอบครัวมีความสุข 💖', 'ขอให้เพื่อนๆ สอบผ่านทุกคน ✨']);
+            
+            useEffect(() => {
+                const savedUser = localStorage.getItem('makha_user');
+                if (savedUser) setUser(JSON.parse(savedUser));
+                const savedPrayers = localStorage.getItem('makha_prayers');
+                if (savedPrayers) setPrayers(JSON.parse(savedPrayers));
+            }, []);
+
+            const handleLogin = (userData) => {
+                localStorage.setItem('makha_user', JSON.stringify(userData));
+                setUser(userData);
+                
+                // ส่งข้อมูลเข้าเรียนไป Sheet
+                sendToGoogleSheet('login', userData);
+            };
+
+            const handleLogout = () => {
+                localStorage.removeItem('makha_user');
+                setUser(null);
+            };
+
+            const addPrayer = (text) => {
+                const newPrayers = [text, ...prayers].slice(0, 10);
+                setPrayers(newPrayers);
+                localStorage.setItem('makha_prayers', JSON.stringify(newPrayers));
+            };
+
+            if (!user) {
+                return <LoginScreen onLogin={handleLogin} />;
+            }
+
+            return (
+                <div className={`max-w-md mx-auto min-h-screen ${THEME.bg} text-slate-800 shadow-2xl relative overflow-hidden flex flex-col selection:bg-orange-200`}>
+                    <header className={`${THEME.primaryBg} text-white p-4 rounded-b-3xl shadow-[0_10px_20px_rgba(230,81,0,0.2)] z-10 relative flex justify-between items-center`}>
+                        <div className="flex items-center gap-3">
+                            <div className="w-12 h-12 bg-white rounded-full p-1 shadow-inner flex items-center justify-center shrink-0">
+                                <img src={SCHOOL_LOGO} alt="Logo" className="w-full h-full object-contain drop-shadow-sm" />
+                            </div>
+                            <div>
+                                <h1 className="text-xl font-extrabold tracking-wide drop-shadow-sm">วันมาฆบูชา 🌕</h1>
+                                <p className="text-xs font-medium text-orange-100 bg-black/20 px-2 py-0.5 rounded-full inline-block mt-1">
+                                    {user.name} ({user.room})
+                                </p>
+                            </div>
+                        </div>
+                        <button onClick={handleLogout} className="text-xs font-bold bg-white/20 px-3 py-2 rounded-xl hover:bg-white/30 hover:scale-105 transition active:scale-95 shadow-sm border border-white/30 backdrop-blur-sm">
+                            ออกระบบ
+                        </button>
+                    </header>
+
+                    <main className="flex-1 overflow-y-auto pb-28 relative hide-scrollbar">
+                        {currentTab === 'home' && <HomeTab prayers={prayers} setTab={setCurrentTab} />}
+                        {currentTab === 'lesson' && <LessonTab />}
+                        {currentTab === 'activity' && <ActivityTab addPrayer={addPrayer} setTab={setCurrentTab} userName={user.name} />}
+                        {currentTab === 'score' && <ScoreTab user={user} />}
+                        
+                        <div className="w-full text-center py-6 opacity-60 flex flex-col items-center justify-center mb-4 mt-4">
+                            <img src={SCHOOL_LOGO} alt="logo small" className="w-8 h-8 mb-2 grayscale opacity-50" />
+                            <p className="text-xs font-bold text-orange-900">จัดทำโดย {AUTHOR_NAME}</p>
+                            <p className="text-[10px] text-orange-800 font-medium">ครู {SCHOOL_NAME}</p>
+                        </div>
+                    </main>
+
+                    <nav className="absolute bottom-0 w-full bg-white/90 backdrop-blur-xl border-t border-orange-100 flex justify-around items-center p-3 pb-6 shadow-[0_-10px_30px_rgba(0,0,0,0.05)] z-50 rounded-t-3xl">
+                        <NavButton icon="🏠" label="หน้าหลัก" isActive={currentTab === 'home'} onClick={() => setCurrentTab('home')} />
+                        <NavButton icon="📖" label="เนื้อหา" isActive={currentTab === 'lesson'} onClick={() => setCurrentTab('lesson')} />
+                        <NavButton icon="🕯️" label="กิจกรรม" isActive={currentTab === 'activity'} onClick={() => setCurrentTab('activity')} />
+                        <NavButton icon="🏆" label="คะแนน" isActive={currentTab === 'score'} onClick={() => setCurrentTab('score')} />
+                    </nav>
+                </div>
+            );
+        }
+
+        function LoginScreen({ onLogin }) {
+            const [formData, setFormData] = useState({ name: '', room: '' });
+
+            const handleSubmit = (e) => {
+                e.preventDefault();
+                if (formData.name && formData.room) onLogin(formData);
+            };
+
+            return (
+                <div className={`max-w-md mx-auto min-h-screen ${THEME.primaryBg} flex flex-col items-center justify-center p-6 relative overflow-hidden`}>
+                    <div className="absolute top-0 left-0 w-64 h-64 bg-white opacity-10 rounded-full blur-3xl -ml-20 -mt-20"></div>
+                    <div className="absolute bottom-0 right-0 w-64 h-64 bg-yellow-400 opacity-20 rounded-full blur-3xl -mr-20 -mb-20"></div>
+
+                    <div className="bg-white/95 backdrop-blur-xl p-8 rounded-[2rem] shadow-2xl w-full max-w-sm text-center relative z-10 border border-white/50">
+                        <div className="w-28 h-28 bg-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-xl border-4 border-orange-50 p-2">
+                            <img src={SCHOOL_LOGO} alt="School Logo" className="w-full h-full object-contain" />
+                        </div>
+                        
+                        <h2 className="text-sm font-extrabold text-orange-600 mb-1 tracking-wide">{SCHOOL_NAME}</h2>
+                        <h1 className="text-3xl font-black text-gray-800 mb-2 drop-shadow-sm">บทเรียนวันมาฆบูชา</h1>
+                        <p className="text-gray-500 mb-8 text-sm font-medium">เข้าสู่ระบบเพื่อเริ่มเรียนรู้และทำกิจกรรม ☸️</p>
+                        
+                        <form onSubmit={handleSubmit} className="space-y-4">
+                            <select required className="w-full px-5 py-4 rounded-2xl border-2 border-orange-100 bg-orange-50/30 focus:bg-white focus:border-orange-500 outline-none transition-all text-lg font-medium text-gray-800 shadow-inner appearance-none cursor-pointer" onChange={(e) => setFormData({ room: e.target.value, name: '' })}>
+                                <option value="" className="text-gray-400">🏫 เลือกระดับชั้น</option>
+                                <option value="ม.1">ม.1</option>
+                                <option value="ม.2">ม.2</option>
+                                <option value="ม.3">ม.3</option>
+                            </select>
+
+                            <select required disabled={!formData.room} value={formData.name} className="w-full px-5 py-4 rounded-2xl border-2 border-orange-100 bg-orange-50/30 focus:bg-white focus:border-orange-500 outline-none transition-all text-lg font-medium text-gray-800 shadow-inner appearance-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-50" onChange={(e) => setFormData({...formData, name: e.target.value})}>
+                                <option value="" className="text-gray-400">📝 เลือกชื่อของนักเรียน</option>
+                                {formData.room && STUDENTS_DATA[formData.room].map(name => (
+                                    <option key={name} value={name}>{name}</option>
+                                ))}
+                            </select>
+
+                            <button type="submit" className="w-full py-4 mt-6 rounded-2xl text-white font-extrabold text-xl shadow-[0_8px_20px_rgba(230,81,0,0.3)] transform transition-all active:scale-95 bg-gradient-to-r from-orange-500 to-[#E65100] hover:from-orange-400 hover:to-orange-600 border border-orange-400/50">
+                                ✨ เข้าสู่บทเรียน ✨
+                            </button>
+                        </form>
+                    </div>
+
+                    <footer className="mt-10 text-center relative z-10">
+                        <p className="text-white/80 text-sm font-bold">จัดทำโดย {AUTHOR_NAME}</p>
+                        <p className="text-white/60 text-xs mt-1">ครู {SCHOOL_NAME}</p>
+                    </footer>
+                </div>
+            );
+        }
+
+        function NavButton({ icon, label, isActive, onClick }) {
+            return (
+                <button onClick={onClick} className={`flex flex-col items-center justify-center w-[72px] transition-all duration-300 ${isActive ? 'text-orange-600 -translate-y-2' : 'text-gray-400 hover:text-orange-400'}`}>
+                    <div className={`mb-1 p-2 rounded-2xl text-2xl transition-all duration-300 ${isActive ? 'bg-orange-100 shadow-md scale-110' : 'bg-transparent grayscale opacity-60'}`}>
+                        {icon}
+                    </div>
+                    <span className={`text-[11px] transition-all ${isActive ? 'font-extrabold opacity-100' : 'font-medium opacity-70'}`}>{label}</span>
+                </button>
+            );
+        }
+
+        function HomeTab({ prayers, setTab }) {
+            return (
+                <div className="p-5 space-y-6 animate-fade-in">
+                    <div className="bg-white rounded-2xl p-1 shadow-sm border-2 border-orange-200 overflow-hidden relative flex items-center">
+                        <div className="bg-gradient-to-r from-orange-500 to-amber-500 text-white px-4 py-2 rounded-xl z-10 font-bold text-sm shadow-md flex items-center whitespace-nowrap">
+                            <span className="mr-2 animate-pulse">📢</span> กระดานบุญ
+                        </div>
+                        <div className="flex-1 overflow-hidden relative h-10 flex items-center bg-orange-50/50 rounded-r-xl">
+                            <div className="animate-marquee absolute whitespace-nowrap text-base text-orange-900 font-semibold flex items-center">
+                                {prayers.map((p, i) => <span key={i} className="mx-6 flex items-center"><span className="text-xl mr-2">🙏</span> {p}</span>)}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="bg-gradient-to-br from-[#FF9800] via-[#F57C00] to-[#E65100] rounded-[2rem] p-7 text-white shadow-xl text-center relative overflow-hidden border border-orange-400/50">
+                        <div className="absolute top-0 right-0 w-48 h-48 bg-white opacity-10 rounded-full blur-2xl -mr-10 -mt-10"></div>
+                        <div className="absolute bottom-0 left-0 w-32 h-32 bg-yellow-300 opacity-20 rounded-full blur-xl -ml-10 -mb-10"></div>
+                        
+                        <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4 backdrop-blur-sm border border-white/30 shadow-inner text-4xl">🌕</div>
+                        <h2 className="text-3xl font-black mb-3 drop-shadow-md tracking-wide">วันจาตุรงคสันนิบาต</h2>
+                        <p className="text-orange-50 text-base mb-6 font-medium leading-relaxed max-w-[250px] mx-auto drop-shadow-sm">
+                            เรียนรู้ประวัติ ความสำคัญ <br/>และร่วมกิจกรรมเวียนเทียนออนไลน์
+                        </p>
+                        <button onClick={() => setTab('lesson')} className="w-full bg-white text-orange-700 px-6 py-4 rounded-2xl font-extrabold text-lg shadow-[0_5px_15px_rgba(0,0,0,0.1)] hover:bg-orange-50 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center border border-white">
+                            📖 เริ่มเรียนรู้กันเลย!
+                        </button>
+                    </div>
+
+                    <div className="flex items-center gap-2 mb-2 px-2">
+                        <span className="text-lg">✨</span>
+                        <h3 className="font-extrabold text-xl text-gray-800">เมนูด่วน</h3>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-5">
+                        <div onClick={() => setTab('activity')} className="glass-card p-5 rounded-[2rem] shadow-sm flex flex-col items-center justify-center gap-3 cursor-pointer hover:-translate-y-1 hover:shadow-lg active:scale-95 transition-all group border-b-4 border-b-orange-200">
+                            <div className="w-16 h-16 bg-gradient-to-br from-orange-100 to-orange-200 rounded-full flex items-center justify-center shadow-inner group-hover:scale-110 transition-transform">
+                                <span className="text-3xl">🕯️</span>
+                            </div>
+                            <span className="text-lg font-bold text-gray-800">เวียนเทียน</span>
+                        </div>
+                        <div onClick={() => setTab('score')} className="glass-card p-5 rounded-[2rem] shadow-sm flex flex-col items-center justify-center gap-3 cursor-pointer hover:-translate-y-1 hover:shadow-lg active:scale-95 transition-all group border-b-4 border-b-yellow-200">
+                            <div className="w-16 h-16 bg-gradient-to-br from-yellow-100 to-yellow-200 rounded-full flex items-center justify-center shadow-inner group-hover:scale-110 transition-transform">
+                                <span className="text-3xl">🏆</span>
+                            </div>
+                            <span className="text-lg font-bold text-gray-800">แบบทดสอบ</span>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        function LessonTab() {
+            const [subTab, setSubTab] = useState('info');
+            const [slideIdx, setSlideIdx] = useState(0);
+
+            return (
+                <div className="flex flex-col h-full animate-fade-in pb-4">
+                    <div className="mx-5 mt-5 p-1.5 flex gap-1 bg-white/60 backdrop-blur-xl shadow-sm border border-white/50 rounded-2xl sticky top-4 z-20">
+                        {[
+                            { id: 'info', label: 'สรุปเนื้อหา', icon: '📜' },
+                            { id: 'slide', label: 'สไลด์ความรู้', icon: '📖' },
+                            { id: 'infographic', label: 'อินโฟกราฟิก', icon: '🖼️' }
+                        ].map((tab) => (
+                            <button 
+                                key={tab.id} 
+                                onClick={() => setSubTab(tab.id)}
+                                className={`flex-1 py-3 px-1 text-sm font-bold rounded-xl flex items-center justify-center transition-all duration-300 ${subTab === tab.id ? 'bg-gradient-to-r from-orange-500 to-[#E65100] text-white shadow-lg shadow-orange-500/30 scale-[1.02] border border-orange-400' : 'bg-transparent text-gray-600 hover:bg-white/80 hover:text-orange-600'}`}
+                            >
+                                <span className="mr-1">{tab.icon}</span> {tab.label}
+                            </button>
+                        ))}
+                    </div>
+
+                    <div className="p-5 flex-1 mt-2">
+                        {subTab === 'info' && (
+                            <div className="space-y-6 animate-fade-in">
+                                <div className="bg-white p-6 rounded-[2rem] shadow-md border-2 border-orange-100 relative overflow-hidden">
+                                    <div className="absolute top-0 right-0 p-4 opacity-10 text-8xl">🌕</div>
+                                    <h3 className="text-2xl font-black text-orange-600 mb-3 flex items-center relative z-10">
+                                        ⭐ ความหมาย
+                                    </h3>
+                                    <p className="text-gray-700 text-lg leading-relaxed font-medium relative z-10">
+                                        <span className="font-bold text-orange-800 text-xl bg-orange-100 px-2 rounded-lg leading-10 inline-block mb-1">วันเพ็ญเดือน 3</span><br/> 
+                                        เป็นวันที่พระสงฆ์ <span className="text-red-600 font-bold">1,250 รูป</span> มาประชุมกันโดยมิได้นัดหมาย ถือเป็นวันสำคัญยิ่งทางพระพุทธศาสนา 🙏
+                                    </p>
+                                </div>
+                                
+                                <div>
+                                    <h3 className="font-black text-2xl text-[#8D6E63] pt-2 mb-4 flex items-center drop-shadow-sm">
+                                        ✨ จาตุรงคสันนิบาต
+                                    </h3>
+                                    <p className="text-gray-500 font-medium mb-4 text-sm bg-white p-3 rounded-xl border border-gray-100 shadow-sm">
+                                        เหตุการณ์มหัศจรรย์ 4 ประการที่เกิดขึ้นพร้อมกัน
+                                    </p>
+                                    
+                                    <div className="grid grid-cols-2 gap-4">
+                                        {[
+                                            { t: "1,250 รูป", d: "มาประชุมกันโดยมิได้นัดหมาย", e: "👥", c: "bg-blue-50 border-blue-200 text-blue-700" },
+                                            { t: "พระอรหันต์", d: "ทั้งหมดทรงอภิญญา 6", e: "✨", c: "bg-orange-50 border-orange-200 text-orange-700" },
+                                            { t: "เอหิภิกขุ", d: "พระพุทธเจ้าทรงบวชให้ทั้งหมด", e: "🙏", c: "bg-pink-50 border-pink-200 text-pink-700" },
+                                            { t: "มาฆฤกษ์", d: "ตรงกับวันเพ็ญเดือน 3", e: "🌕", c: "bg-indigo-50 border-indigo-200 text-indigo-700" }
+                                        ].map((item, i) => (
+                                            <div key={i} className={`bg-white p-5 rounded-[1.5rem] shadow-sm border-b-4 ${item.c} flex flex-col items-center justify-center text-center transform transition hover:-translate-y-1 hover:shadow-md`}>
+                                                <div className="text-4xl mb-3 drop-shadow-sm">{item.e}</div>
+                                                <h4 className="font-extrabold text-lg mb-1 leading-tight">{item.t}</h4>
+                                                <p className="text-sm font-medium opacity-80">{item.d}</p>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                <div className="bg-gradient-to-br from-[#E8F5E9] to-[#C8E6C9] p-7 rounded-[2rem] shadow-md border border-[#A5D6A7] mt-8 relative overflow-hidden">
+                                    <div className="absolute -right-4 -bottom-4 text-8xl opacity-10 transform rotate-12">☸️</div>
+                                    <h3 className="text-2xl font-black text-emerald-800 mb-5 flex items-center relative z-10">
+                                        📖 โอวาทปาติโมกข์
+                                    </h3>
+                                    <p className="text-emerald-700 font-bold mb-4 bg-white/50 inline-block px-3 py-1 rounded-lg">หัวใจพระพุทธศาสนา ๓ ประการ</p>
+                                    
+                                    <ul className="space-y-4 relative z-10">
+                                        {[
+                                            { t: "การไม่ทำบาปทั้งปวง", e: "❌", c: "text-red-600" },
+                                            { t: "การทำกุศลให้ถึงพร้อม", e: "💖", c: "text-emerald-700" },
+                                            { t: "การทำจิตใจให้บริสุทธิ์ผ่องใส", e: "🧘‍♂️", c: "text-blue-600" }
+                                        ].map((li, idx) => (
+                                            <li key={idx} className="flex items-center bg-white p-4 rounded-2xl shadow-sm border border-emerald-100 transform transition hover:scale-[1.02]">
+                                                <div className="w-10 h-10 rounded-full bg-emerald-50 flex items-center justify-center text-xl mr-4 shrink-0 shadow-inner">{li.e}</div>
+                                                <span className={`text-lg font-bold ${li.c}`}>{idx+1}. {li.t}</span>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            </div>
+                        )}
+
+                        {subTab === 'slide' && (
+                            <div className="flex flex-col items-center justify-center h-full min-h-[450px]">
+                                <div className="bg-white w-full aspect-[4/5] rounded-[2.5rem] shadow-2xl flex flex-col items-center justify-center p-8 text-center relative overflow-hidden transition-all duration-300 border border-orange-100">
+                                    <div className="absolute top-5 right-6 text-sm font-black text-orange-300 bg-orange-50 px-3 py-1 rounded-full border border-orange-100">
+                                        {slideIdx + 1} / {SLIDES_DATA.length}
+                                    </div>
+                                    <div className="text-7xl mb-6 mt-4 transition-transform duration-500 hover:scale-125 drop-shadow-md">
+                                        {SLIDES_DATA[slideIdx].icon}
+                                    </div>
+                                    <h2 className={`text-3xl font-black ${THEME.secondary} mb-5 leading-tight px-2`}>
+                                        {SLIDES_DATA[slideIdx].title}
+                                    </h2>
+                                    <p className="text-gray-600 text-xl leading-relaxed font-medium px-4">
+                                        {SLIDES_DATA[slideIdx].desc}
+                                    </p>
+                                </div>
+                                
+                                <div className="flex justify-between items-center w-full mt-10 px-6">
+                                    <button disabled={slideIdx === 0} onClick={() => setSlideIdx(s => s - 1)} className="w-14 h-14 rounded-full bg-white shadow-lg flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed text-orange-600 active:scale-90 transition-all border border-orange-100 hover:bg-orange-50 text-2xl">
+                                        ◀️
+                                    </button>
+                                    <div className="flex gap-3 items-center bg-white/50 px-4 py-2 rounded-full backdrop-blur-sm">
+                                        {SLIDES_DATA.map((_, idx) => (
+                                            <div key={idx} className={`h-3 rounded-full transition-all duration-300 ${idx === slideIdx ? 'w-8 bg-gradient-to-r from-orange-400 to-amber-500 shadow-md' : 'w-3 bg-gray-300'}`} />
+                                        ))}
+                                    </div>
+                                    <button disabled={slideIdx === SLIDES_DATA.length - 1} onClick={() => setSlideIdx(s => s + 1)} className="w-14 h-14 rounded-full bg-white shadow-lg flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed text-orange-600 active:scale-90 transition-all border border-orange-100 hover:bg-orange-50 text-2xl">
+                                        ▶️
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+
+                        {subTab === 'infographic' && (
+                            <div className="space-y-4 animate-fade-in">
+                                <div className="bg-white rounded-[2rem] p-3 shadow-xl border-2 border-orange-100 overflow-hidden relative group">
+                                    <div className="absolute top-4 right-4 bg-orange-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-md z-10 flex items-center gap-1">
+                                        🖼️ ภาพสรุป
+                                    </div>
+                                    <img src="https://img2.pic.in.th/Gemini_Generated_Image_xgbd92xgbd92xgbd.png" alt="Infographic วันมาฆบูชา" className="w-full h-auto min-h-[400px] rounded-2xl object-cover bg-gray-100 transition-transform duration-700 group-hover:scale-[1.02]" onError={(e) => { e.target.onerror = null; e.target.src = "https://placehold.co/600x1200/fff3e0/ea580c?text=Infographic+Image"; }} />
+                                    <div className="text-center mt-5 mb-3 bg-orange-50 p-4 rounded-xl border border-orange-100">
+                                        <p className="text-lg font-black text-orange-800">📌 ภาพสรุปความรู้วันมาฆบูชา</p>
+                                        <p className="text-sm text-gray-500 font-medium mt-1">สามารถแตะค้างเพื่อบันทึกรูปภาพได้</p>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            );
+        }
+
+        function ActivityTab({ addPrayer, setTab, userName }) {
+            const [step, setStep] = useState(1);
+            const [selectedItem, setSelectedItem] = useState(null);
+            const [rounds, setRounds] = useState(0);
+            const [angle, setAngle] = useState(0); 
+            const [prayerText, setPrayerText] = useState('');
+
+            const items = [
+                { id: 'lotus', name: 'ดอกบัว', icon: '🪷', color: 'bg-pink-50 border-pink-200 text-pink-700 hover:bg-pink-100' },
+                { id: 'incense', name: 'ธูป', icon: '🥢', color: 'bg-stone-50 border-stone-200 text-stone-700 hover:bg-stone-100' },
+                { id: 'candle', name: 'เทียน', icon: '🕯️', color: 'bg-yellow-50 border-yellow-200 text-yellow-700 hover:bg-yellow-100' },
+            ];
+
+            const handleWalk = () => {
+                const newAngle = angle + 45; 
+                setAngle(newAngle);
+                if (newAngle > 0 && newAngle % 360 === 0) {
+                    const newRound = rounds + 1;
+                    setRounds(newRound);
+                    if (newRound === 3) setTimeout(() => setStep(3), 600); 
+                }
+            };
+
+            const submitPrayer = () => {
+                if (prayerText.trim()) addPrayer(prayerText);
+                setTab('home');
+            };
+
+            return (
+                <div className="p-6 h-full flex flex-col animate-fade-in">
+                    {step === 1 && (
+                        <div className="flex-1 flex flex-col justify-center items-center">
+                            <div className="w-24 h-24 bg-white rounded-full shadow-lg flex items-center justify-center text-5xl mb-6 border-4 border-orange-100">🙏</div>
+                            <h2 className={`text-3xl font-black ${THEME.secondary} mb-3 text-center`}>เตรียมเครื่องสักการะ</h2>
+                            <p className="text-gray-500 text-base font-medium mb-10 text-center bg-white px-4 py-2 rounded-full shadow-sm border border-gray-100">เลือกสิ่งของ 1 อย่าง เพื่อใช้เวียนเทียน</p>
+                            
+                            <div className="grid grid-cols-3 gap-4 w-full max-w-[320px] mb-12">
+                                {items.map(item => (
+                                    <button key={item.id} onClick={() => setSelectedItem(item)} className={`p-5 rounded-[2rem] flex flex-col items-center justify-center gap-3 border-4 transition-all duration-300 ${selectedItem?.id === item.id ? 'border-orange-500 bg-orange-100 shadow-xl scale-110 -translate-y-2' : `border-transparent ${item.color} shadow-sm hover:scale-105`}`}>
+                                        <span className="text-5xl drop-shadow-md">{item.icon}</span>
+                                        <span className="text-base font-extrabold">{item.name}</span>
+                                    </button>
+                                ))}
+                            </div>
+
+                            <button disabled={!selectedItem} onClick={() => setStep(2)} className={`w-full py-5 rounded-2xl text-white font-black text-xl shadow-[0_8px_20px_rgba(0,0,0,0.15)] transition-all duration-300 flex items-center justify-center gap-2 ${selectedItem ? 'bg-gradient-to-r from-orange-500 to-amber-500 hover:scale-[1.02] active:scale-95' : 'bg-gray-300 cursor-not-allowed opacity-70'}`}>
+                                ไปที่อุโบสถ ⛩️
+                            </button>
+                        </div>
+                    )}
+
+                    {step === 2 && (
+                        <div className="flex-1 flex flex-col items-center pt-8 relative">
+                            <div className="bg-white px-6 py-3 rounded-full shadow-md border-2 border-orange-100 mb-4 flex items-center gap-3">
+                                <span className="text-2xl animate-spin" style={{animationDuration: '3s'}}>☸️</span>
+                                <h2 className={`text-2xl font-black ${THEME.secondary}`}>รอบที่ {rounds + 1 > 3 ? 3 : rounds + 1} / 3</h2>
+                            </div>
+                            <p className="text-base font-bold text-orange-600 mb-8 bg-orange-50 px-4 py-1 rounded-lg">กดปุ่มด้านล่างเพื่อเดินเวียนขวา (ทักษิณาวรรต)</p>
+
+                            <div className="relative w-72 h-72 my-10 flex items-center justify-center">
+                                <div className="absolute inset-0 border-4 border-dashed border-orange-300 rounded-full animate-[spin_20s_linear_infinite] opacity-50"></div>
+                                <div className="absolute w-28 h-28 bg-gradient-to-br from-amber-100 to-orange-200 rounded-full flex items-center justify-center shadow-inner z-10 border-4 border-white shadow-[0_0_30px_rgba(251,191,36,0.5)]">
+                                    <span className="text-6xl drop-shadow-xl">🏛️</span>
+                                </div>
+                                <div className="absolute w-full h-full wien-tien-path" style={{ transform: `rotate(${angle}deg)` }}>
+                                    <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-16 h-16 bg-white rounded-full shadow-[0_5px_15px_rgba(0,0,0,0.2)] flex items-center justify-center border-4 border-orange-400" style={{ transform: `rotate(${-angle}deg)`}}>
+                                        <span className="text-3xl drop-shadow-sm">{selectedItem?.icon}</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <button onClick={handleWalk} className="mt-auto mb-4 w-full max-w-[280px] py-5 rounded-full text-white font-black text-2xl shadow-[0_10px_25px_rgba(230,81,0,0.4)] active:scale-90 transition-all bg-gradient-to-r from-orange-500 via-[#F57C00] to-amber-500 border-2 border-orange-300 flex items-center justify-center gap-2">
+                                👣 กดเดิน
+                            </button>
+                        </div>
+                    )}
+
+                    {step === 3 && (
+                        <div className="flex-1 flex flex-col justify-center items-center text-center animate-fade-in">
+                            <div className="bg-white p-8 rounded-[2.5rem] shadow-2xl w-full relative overflow-hidden border-4 border-yellow-100">
+                                <div className="absolute top-0 right-0 w-40 h-40 bg-yellow-300 rounded-full blur-3xl opacity-30 -mr-10 -mt-10"></div>
+                                <div className="relative">
+                                    <div className="text-7xl mx-auto mb-2 drop-shadow-lg">🏅</div>
+                                    <div className="absolute top-0 right-10 text-4xl animate-bounce">✨</div>
+                                </div>
+                                <h2 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-orange-600 to-yellow-500 mb-2">อนุโมทนาบุญ</h2>
+                                <p className="text-gray-600 mb-8 text-lg font-bold bg-gray-50 rounded-xl py-2 px-4 inline-block border border-gray-100">
+                                    <span className="text-orange-600">{userName}</span><br/>เวียนเทียนครบ ๓ รอบแล้ว
+                                </p>
+                                <div className="text-left mb-8 bg-orange-50/50 p-5 rounded-2xl border border-orange-100">
+                                    <label className="block text-base font-black text-orange-800 mb-3 flex items-center gap-2">✨ เขียนคำอธิษฐาน</label>
+                                    <textarea value={prayerText} onChange={(e) => setPrayerText(e.target.value)} placeholder="ขอให้..." className="w-full p-4 border-2 border-white rounded-xl focus:border-orange-400 outline-none h-28 resize-none bg-white text-base font-medium shadow-inner placeholder-gray-400 text-gray-800"></textarea>
+                                </div>
+                                <button onClick={submitPrayer} className="w-full py-5 rounded-2xl text-white font-black text-xl shadow-xl transition-all hover:scale-[1.02] active:scale-95 bg-gradient-to-r from-[#FF8F00] to-[#E65100]">
+                                    ส่งคำอธิษฐาน 🙏
+                                </button>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
+        function ScoreTab({ user }) {
+            const [quizState, setQuizState] = useState('start'); 
+            const [currentQ, setCurrentQ] = useState(0);
+            const [score, setScore] = useState(0);
+            const [startTime, setStartTime] = useState(null);
+            const [timeTaken, setTimeTaken] = useState(0);
+            const [leaderboard, setLeaderboard] = useState([]);
+
+            useEffect(() => {
+                const savedLb = localStorage.getItem('makha_leaderboard');
+                if (savedLb) setLeaderboard(JSON.parse(savedLb));
+                else { setLeaderboard(MOCK_LEADERBOARD); localStorage.setItem('makha_leaderboard', JSON.stringify(MOCK_LEADERBOARD)); }
+            }, []);
+
+            const startQuiz = () => { setScore(0); setCurrentQ(0); setStartTime(Date.now()); setQuizState('playing'); };
+
+            const processAnswer = (selectedIndex) => {
+                const isCorrect = selectedIndex === QUIZ_DATA[currentQ].answer;
+                const newScore = isCorrect ? score + 1 : score;
+                setScore(newScore);
+
+                if (currentQ < QUIZ_DATA.length - 1) {
+                    setCurrentQ(currentQ + 1);
+                } else {
+                    const endT = Date.now();
+                    const timeSecs = Math.floor((endT - startTime) / 1000);
+                    setTimeTaken(timeSecs);
+                    
+                    const newEntry = { name: user.name, room: user.room, score: newScore, time: timeSecs };
+                    const updatedLb = [...leaderboard, newEntry].sort((a, b) => { if (b.score !== a.score) return b.score - a.score; return a.time - b.time; });
+                    setLeaderboard(updatedLb);
+                    localStorage.setItem('makha_leaderboard', JSON.stringify(updatedLb));
+                    setQuizState('end');
+                    
+                    // ส่งข้อมูลสอบเสร็จไป Sheet
+                    sendToGoogleSheet('quiz', newEntry);
+                }
+            };
+
+            return (
+                <div className="p-5 h-full flex flex-col animate-fade-in">
+                    {quizState === 'start' && (
+                        <div className="flex-1 flex flex-col justify-center items-center">
+                            <div className="bg-white p-8 rounded-[2.5rem] shadow-xl w-full text-center border-4 border-blue-50 relative overflow-hidden">
+                                <div className="absolute top-0 right-0 p-4 opacity-5 text-8xl">🏆</div>
+                                <div className="w-24 h-24 bg-gradient-to-br from-blue-100 to-blue-200 rounded-full flex items-center justify-center mx-auto mb-5 shadow-inner">
+                                    <span className="text-5xl drop-shadow-md">🏆</span>
+                                </div>
+                                <h2 className="text-3xl font-black text-blue-900 mb-3">แบบทดสอบ<br/>ความรู้</h2>
+                                <p className="text-gray-500 mb-8 text-base font-medium bg-blue-50 py-2 rounded-lg">มีทั้งหมด 10 ข้อ จับเวลาแข่งขัน!</p>
+                                <button onClick={startQuiz} className="w-full py-5 rounded-2xl text-white font-black text-xl shadow-[0_8px_20px_rgba(37,99,235,0.3)] transition-all active:scale-95 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-400 hover:to-indigo-500">
+                                    🎮 เริ่มทำแบบทดสอบ 🎮
+                                </button>
+                            </div>
+
+                            <div className="w-full mt-8">
+                                <h3 className="font-black text-xl text-gray-800 mb-4 px-2 flex items-center drop-shadow-sm">
+                                    <span className="mr-2 text-2xl">🏅</span> กระดานคนเก่ง (Top 3)
+                                </h3>
+                                <div className="bg-white rounded-[2rem] shadow-md border-2 border-gray-100 overflow-hidden">
+                                    {leaderboard.slice(0,3).map((lb, idx) => (
+                                        <div key={idx} className="flex items-center justify-between p-5 border-b border-gray-50 hover:bg-gray-50 transition-colors">
+                                            <div className="flex items-center gap-4">
+                                                <span className={`w-10 h-10 rounded-full flex items-center justify-center font-black text-lg shadow-sm ${idx === 0 ? 'bg-gradient-to-br from-yellow-300 to-yellow-500 text-white' : idx === 1 ? 'bg-gradient-to-br from-gray-200 to-gray-400 text-white' : idx === 2 ? 'bg-gradient-to-br from-orange-200 to-orange-400 text-white' : ''}`}>
+                                                    {idx === 0 ? '🥇' : idx === 1 ? '🥈' : '🥉'}
+                                                </span>
+                                                <div>
+                                                    <div className="font-extrabold text-base text-gray-800">{lb.name}</div>
+                                                    <div className="text-sm font-medium text-gray-400 bg-gray-100 px-2 rounded-md inline-block mt-1">{lb.room}</div>
+                                                </div>
+                                            </div>
+                                            <div className="text-right bg-orange-50 px-3 py-2 rounded-xl border border-orange-100">
+                                                <div className="font-black text-xl text-orange-600 leading-none">{lb.score}<span className="text-sm text-orange-400">/10</span></div>
+                                                <div className="text-xs font-bold text-gray-500 mt-1 flex items-center justify-end">
+                                                    ⏱️ {lb.time} วิ.
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {quizState === 'playing' && (
+                        <div className="flex-1 flex flex-col mt-2">
+                            <div className="flex justify-between items-center mb-6 bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
+                                <span className="text-lg font-black text-orange-600 bg-orange-100 px-3 py-1 rounded-lg">ข้อ {currentQ + 1} <span className="text-gray-400">/ {QUIZ_DATA.length}</span></span>
+                                <div className="flex gap-1.5">
+                                    {QUIZ_DATA.map((_, i) => <div key={i} className={`h-3 rounded-full transition-all duration-300 ${i <= currentQ ? 'w-8 bg-gradient-to-r from-orange-400 to-amber-500' : 'w-3 bg-gray-200'}`}/>)}
+                                </div>
+                            </div>
+
+                            <div className="bg-white p-8 rounded-[2.5rem] shadow-xl border-4 border-orange-50 mb-6 flex-1 flex flex-col">
+                                <h2 className="text-2xl font-black text-gray-800 mb-8 leading-relaxed text-center">{QUIZ_DATA[currentQ].question}</h2>
+                                <div className="space-y-4 mt-auto">
+                                    {QUIZ_DATA[currentQ].options.map((opt, i) => (
+                                        <button key={i} onClick={() => processAnswer(i)} className="w-full text-left p-5 rounded-[1.5rem] border-2 border-gray-100 hover:border-orange-400 hover:bg-orange-50 hover:shadow-md hover:-translate-y-1 transition-all font-bold text-lg text-gray-700 active:bg-orange-100 flex items-center group">
+                                            <div className="w-8 h-8 rounded-full bg-gray-100 text-gray-400 flex items-center justify-center mr-4 group-hover:bg-orange-200 group-hover:text-orange-700 font-black transition-colors">{String.fromCharCode(65 + i)}</div>
+                                            {opt}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {quizState === 'end' && (
+                        <div className="flex-1 flex flex-col justify-center items-center text-center animate-fade-in">
+                            <div className="bg-white p-8 rounded-[3rem] shadow-2xl w-full border-4 border-yellow-100 relative overflow-hidden">
+                                <div className="absolute top-0 right-0 w-32 h-32 bg-yellow-300 rounded-full blur-3xl opacity-30 -mr-10 -mt-10"></div>
+                                <div className="absolute bottom-0 left-0 w-32 h-32 bg-orange-300 rounded-full blur-3xl opacity-20 -ml-10 -mb-10"></div>
+                                
+                                <div className="w-32 h-32 bg-gradient-to-br from-yellow-300 to-orange-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-xl text-white border-4 border-white z-10 relative transform hover:scale-110 transition-transform">
+                                    <span className="text-5xl font-black drop-shadow-md">{score}/{QUIZ_DATA.length}</span>
+                                </div>
+                                
+                                <h2 className="text-3xl font-black text-gray-800 mb-2 relative z-10">
+                                    {score >= 8 ? 'สุดยอด! เก่งมากๆ 🎉' : score >= 5 ? 'พยายามได้ดี! 👍' : 'ลองใหม่อีกครั้งนะ ✌️'}
+                                </h2>
+                                <p className="text-gray-600 mb-8 text-lg font-bold flex items-center justify-center bg-gray-50 py-2 rounded-xl relative z-10 border border-gray-100">
+                                    <span className="text-xl mr-2 text-blue-500">⏱️</span> ใช้เวลาไป <span className="text-blue-600 mx-2 text-xl">{timeTaken}</span> วินาที
+                                </p>
+                                
+                                <button onClick={() => setQuizState('start')} className="w-full py-5 rounded-2xl text-white font-black text-xl shadow-lg transition-transform active:scale-95 bg-gradient-to-r from-[#FF8F00] to-[#E65100] relative z-10">
+                                    🏆 ดู Leaderboard
+                                </button>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
