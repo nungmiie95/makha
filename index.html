@@ -105,6 +105,13 @@
             { title: "โอวาทปาติโมกข์ ☸️", desc: "หัวใจพุทธศาสนา: \n1. ละเว้นความชั่ว \n2. ทำความดี \n3. ทำจิตใจให้บริสุทธิ์", icon: "☸️" },
         ];
 
+        // เพิ่มตัวแปร MOCK_LEADERBOARD เพื่อใช้สำหรับสร้างกระดานคะแนนเริ่มต้น
+        const MOCK_LEADERBOARD = [
+            { name: "ด.ช. กวีเอก แก้วสาลี", room: "ม.1", score: 10, time: 45 },
+            { name: "ด.ญ. จิดาภา อินธิแสง", room: "ม.2", score: 9, time: 52 },
+            { name: "ด.ช. ธีรนัย แสนคำ", room: "ม.3", score: 8, time: 30 },
+        ];
+
         function App() {
             const [user, setUser] = useState(null);
             const [currentTab, setCurrentTab] = useState('home');
